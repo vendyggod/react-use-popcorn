@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import StarRating from './StarRating';
 
 const tempMovieData = [
   {
@@ -49,61 +50,35 @@ const tempWatchedData = [
 
 export default function App() {
   const [movies, setMovies] = useState(tempMovieData);
+  const [watched, setWatched] = useState(tempWatchedData);
 
   return (
     <>
       <Navigation>
-        <Logo />
         <Search />
         <NumResults movies={movies} />
       </Navigation>
-      <Main movies={movies} />
+      <Main>
+        <ContentBox>
+          <MoviesList movies={movies} />
+        </ContentBox>
+
+        <ContentBox>
+          <WatchedSummary watched={watched} />
+          <WatchedMoviesList watched={watched} />
+        </ContentBox>
+      </Main>
     </>
   );
 }
 
-function Main({ movies }) {
-  return (
-    <main className="main">
-      <ListBox movies={movies} />
-      <WatchedBox />
-    </main>
-  );
-}
-
-function ListBox({ movies }) {
-  const [isOpen, setIsOpen] = useState(true);
-
-  return (
-    <div className="box">
-      <Button onClick={() => setIsOpen((open) => !open)}>
-        {isOpen ? '–' : '+'}
-      </Button>
-      {isOpen && <MoviesList movies={movies} />}
-    </div>
-  );
-}
-
-function WatchedBox() {
-  const [watched, setWatched] = useState(tempWatchedData);
-  const [isOpen, setIsOpen] = useState(true);
-
-  return (
-    <div className="box">
-      <Button onClick={() => setIsOpen((open) => !open)}>
-        {isOpen ? '–' : '+'}
-      </Button>
-      {isOpen && (
-        <>
-          <WatchedSummary watched={watched} />
-          <WatchedMoviesList watched={watched} />
-        </>
-      )}
-    </div>
-  );
-}
 function Navigation({ children }) {
-  return <nav className="nav-bar">{children}</nav>;
+  return (
+    <nav className="nav-bar">
+      <Logo />
+      {children}
+    </nav>
+  );
 }
 
 function NumResults({ movies }) {
@@ -137,35 +112,19 @@ function Logo() {
   );
 }
 
-function WatchedSummary({ watched }) {
-  const average = (arr) =>
-    arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
+function Main({ children }) {
+  return <main className="main">{children}</main>;
+}
 
-  const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
-  const avgUserRating = average(watched.map((movie) => movie.userRating));
-  const avgRuntime = average(watched.map((movie) => movie.runtime));
+function ContentBox({ children }) {
+  const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <div className="summary">
-      <h2>Movies you watched</h2>
-      <div>
-        <p>
-          <span>#️⃣</span>
-          <span>{watched.length} movies</span>
-        </p>
-        <p>
-          <span>⭐️</span>
-          <span>{avgImdbRating}</span>
-        </p>
-        <p>
-          <span>🌟</span>
-          <span>{avgUserRating}</span>
-        </p>
-        <p>
-          <span>⏳</span>
-          <span>{avgRuntime} min</span>
-        </p>
-      </div>
+    <div className="box">
+      <Button onClick={() => setIsOpen((open) => !open)}>
+        {isOpen ? '–' : '+'}
+      </Button>
+      {isOpen && children}
     </div>
   );
 }
@@ -224,6 +183,39 @@ function WatchedMovie({ movie }) {
         </p>
       </div>
     </li>
+  );
+}
+
+function WatchedSummary({ watched }) {
+  const average = (arr) =>
+    arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
+
+  const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
+  const avgUserRating = average(watched.map((movie) => movie.userRating));
+  const avgRuntime = average(watched.map((movie) => movie.runtime));
+
+  return (
+    <div className="summary">
+      <h2>Movies you watched</h2>
+      <div>
+        <p>
+          <span>#️⃣</span>
+          <span>{watched.length} movies</span>
+        </p>
+        <p>
+          <span>⭐️</span>
+          <span>{avgImdbRating}</span>
+        </p>
+        <p>
+          <span>🌟</span>
+          <span>{avgUserRating}</span>
+        </p>
+        <p>
+          <span>⏳</span>
+          <span>{avgRuntime} min</span>
+        </p>
+      </div>
+    </div>
   );
 }
 
