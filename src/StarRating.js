@@ -31,7 +31,7 @@ export default function StarRating({
   onSetRating,
 }) {
   const [rating, setRating] = useState(defaultRating);
-  const [tempRating, setTempRating] = useState(0);
+  const [tempRating, setTempRating] = useState(null);
 
   const textStyle = {
     margin: '0',
@@ -43,7 +43,7 @@ export default function StarRating({
   function handleRating(num) {
     setRating(num);
     setTempRating(num);
-    // onSetRating(num);
+    onSetRating(num);
   }
 
   function onHoverIn(num) {
