@@ -1,44 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import StarRating from './StarRating';
-
-const API_KEY = 'c1231679';
+import { useMovies, API_KEY } from './useMovies';
+import { useLocalStorage } from './useLocalStorage';
+import { useKey } from './useKey';
 
 export default function App() {
-  const [movies, setMovies] = useState([]);
-  const [watched, setWatched] = useState([]);
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [watched, setWatched] = useLocalStorage([], 'watched');
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setIsLoading(true);
-        setError('');
-        const res = await fetch(
-          `http://www.omdbapi.com/?apikey=${API_KEY}&s=${query}`
-        );
-        const data = await res.json();
-
-        if (!res.ok) throw new Error('Something went wrong. Try again.');
-        if (data.Response === 'False')
-          throw new Error('⛔ No movies were found');
-
-        setMovies(data.Search);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    if (query.length < 3) {
-      setMovies([]);
-      setError('');
-      return;
-    }
-    fetchData();
-  }, [query]);
+  const { movies, isLoading, error } = useMovies(query);
 
   function handleSelectedId(id) {
     setSelectedId((prevId) => (id === prevId ? null : id));
@@ -103,6 +74,8 @@ function MovieDetails({
   const [isLoading, setIsLoading] = useState(false);
   const [userRating, setUserRating] = useState(null);
 
+  const counterRef = useRef(0);
+
   const isWatched = watchedMovies.some((movie) => movie.imdbID === selectedId);
 
   function addWatched() {
@@ -114,6 +87,7 @@ function MovieDetails({
       imdbRating: Number(imdbRating),
       userRating: Number(userRating),
       runtime: Number(runtime.split(' ').at(0)),
+      counterRatingDecision: counterRef.current,
     };
 
     if (isWatched) {
@@ -141,6 +115,10 @@ function MovieDetails({
   } = movie;
 
   useEffect(() => {
+    if (userRating) counterRef.current++;
+  }, [userRating]);
+
+  useEffect(() => {
     async function fetchData() {
       try {
         if (!selectedId) return;
@@ -159,6 +137,17 @@ function MovieDetails({
     }
     fetchData();
   }, [selectedId]);
+
+  // Changing page title after getting movie details
+
+  useEffect(() => {
+    if (!title) return;
+    document.title = `MOVIE | ${title}`;
+
+    return () => (document.title = 'usePopcorn');
+  }, [title]);
+
+  useKey('escape', onCloseMovie);
 
   return (
     <div className="details">
@@ -193,6 +182,7 @@ function MovieDetails({
                 }
                 onSetRating={setUserRating}
               />
+              {isWatched && <p>You have already rated this movie.</p>}
               {userRating && (
                 <button className="btn-add" onClick={addWatched}>
                   {isWatched ? 'Change my rating' : '+ Add to list'}
@@ -241,6 +231,12 @@ function NumResults({ movies }) {
 }
 
 function Search({ query, onChangeQuery }) {
+  const inputEl = useRef(null);
+
+  useEffect(() => {
+    inputEl.current.focus();
+  }, []);
+
   return (
     <input
       className="search"
@@ -248,6 +244,7 @@ function Search({ query, onChangeQuery }) {
       placeholder="Search movies..."
       value={query}
       onChange={(e) => onChangeQuery(e.target.value)}
+      ref={inputEl}
     />
   );
 }
@@ -367,7 +364,7 @@ function WatchedSummary({ watched }) {
         </p>
         <p>
           <span>⭐️</span>
-          <span>{avgImdbRating}</span>
+          <span>{Math.round(avgImdbRating * 100) / 100}</span>
         </p>
         <p>
           <span>🌟</span>
